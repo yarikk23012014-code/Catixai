@@ -1,0 +1,1118 @@
+DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>CATixAI</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<style>
+:root{--bg:#fff8f0;--s1:#fff3e6;--s2:#ffe8cc;--border:#ffd0a0;--accent:#e06000;--accent2:#ff7a00;--danger:#e03040;--warn:#e09000;--green:#2a8a4a;--blue:#3a7bd5;--text:#2d1500;--muted:#b06030;--glow:rgba(224,96,0,0.12);--user-bg:#ff7a00;--ai-bg:#fff3e6;--user-text:#fff;}
+[data-theme="dark"]{--bg:#1a0f00;--s1:#231500;--s2:#2d1a00;--border:#3d2600;--accent:#ff7a00;--accent2:#ff9a33;--danger:#ff3355;--warn:#ffcc00;--green:#33cc66;--blue:#5a9bf5;--text:#ffe8cc;--muted:#7a5030;--glow:rgba(255,122,0,0.15);--user-bg:#3d1f00;--ai-bg:#231500;--user-text:#ffe8cc;}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Exo 2',sans-serif;transition:background .3s,color .3s;}
+
+#auth-screen{position:fixed;inset:0;z-index:500;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;gap:20px;}
+.auth-logo{font-family:'Orbitron',monospace;font-size:36px;font-weight:900;color:var(--accent);text-shadow:0 0 30px var(--glow);letter-spacing:.05em;text-align:center;}
+.auth-logo small{display:block;font-size:11px;font-weight:400;color:var(--muted);letter-spacing:.2em;margin-top:4px;}
+.auth-card{background:var(--s1);border:1px solid var(--border);border-radius:20px;padding:28px 24px;width:100%;max-width:360px;box-shadow:0 4px 20px rgba(0,0,0,.1);}
+.auth-card h2{font-family:'Orbitron',monospace;font-size:13px;color:var(--accent);margin-bottom:6px;}
+.auth-card p{font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:18px;}
+.google-btn{width:100%;background:#fff;border:1.5px solid #ddd;border-radius:12px;padding:13px 16px;display:flex;align-items:center;justify-content:center;gap:10px;font-size:14px;font-weight:600;color:#333;cursor:pointer;transition:all .2s;font-family:'Exo 2',sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.08);}
+.google-btn:hover{box-shadow:0 4px 16px rgba(0,0,0,.15);transform:translateY(-1px);}
+.auth-sep{display:flex;align-items:center;gap:10px;margin:14px 0;}
+.auth-sep::before,.auth-sep::after{content:'';flex:1;height:1px;background:var(--border);}
+.auth-sep span{font-size:11px;color:var(--muted);}
+.auth-input{width:100%;background:var(--s2);border:1px solid var(--border);color:var(--text);padding:11px 13px;border-radius:10px;font-size:13px;font-family:'Exo 2',sans-serif;outline:none;transition:border-color .2s;margin-bottom:8px;-webkit-appearance:none;}
+.auth-input:focus{border-color:var(--accent);}
+.auth-input::placeholder{color:var(--muted);}
+.auth-btn{width:100%;background:var(--accent);border:none;color:#fff;padding:12px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Exo 2',sans-serif;margin-top:4px;}
+.auth-btn:hover{opacity:.85;}
+.auth-toggle{font-size:11px;color:var(--muted);text-align:center;margin-top:12px;cursor:pointer;}
+.auth-toggle span{color:var(--accent);}
+#auth-error{font-size:11px;color:var(--danger);text-align:center;min-height:16px;margin-top:4px;}
+.skip-btn{background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;font-family:'Exo 2',sans-serif;text-decoration:underline;margin-top:8px;display:block;width:100%;text-align:center;}
+
+#app{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;}
+header{padding:10px 14px;background:var(--s1);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-shrink:0;}
+#settings-btn{background:none;border:1px solid var(--border);color:var(--accent);width:34px;height:34px;border-radius:10px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+#settings-btn:hover{border-color:var(--accent);background:rgba(255,122,0,.1);}
+.hdr-logo{font-family:'Orbitron',monospace;font-size:17px;font-weight:900;color:var(--accent);text-shadow:0 0 12px var(--glow);letter-spacing:.05em;}
+.hdr-logo small{font-size:9px;color:var(--muted);display:block;font-weight:400;letter-spacing:.1em;}
+#hdr-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
+#mem-badge{font-size:10px;padding:4px 10px;border-radius:20px;border:1px solid var(--border);color:var(--muted);cursor:pointer;transition:all .3s;white-space:nowrap;}
+#mem-badge.on{border-color:var(--green);color:var(--green);background:rgba(42,138,74,.1);}
+.user-av-placeholder{width:30px;height:30px;border-radius:50%;border:2px solid var(--accent);background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;}
+
+#rambar{padding:4px 14px;background:var(--s1);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.rl{font-size:9px;color:var(--muted);letter-spacing:.07em;white-space:nowrap;}
+.rt{flex:1;height:4px;background:var(--s2);border-radius:2px;overflow:hidden;}
+#rf{height:100%;width:0%;border-radius:2px;background:linear-gradient(90deg,#c05000,var(--accent));transition:width .5s,background .3s;}
+#rp{font-size:9px;color:var(--accent);font-family:'Orbitron',monospace;min-width:28px;text-align:right;}
+#cloud-pill{font-size:9px;padding:2px 7px;border-radius:20px;border:1px solid var(--border);color:var(--muted);cursor:pointer;transition:all .2s;white-space:nowrap;}
+#cloud-pill.on{border-color:var(--blue);color:var(--blue);}
+
+#model-screen{flex:1;overflow-y:auto;padding:18px 14px;display:flex;flex-direction:column;gap:10px;}
+.sc-title{font-family:'Orbitron',monospace;font-size:13px;font-weight:700;color:var(--accent);letter-spacing:.1em;text-align:center;}
+.sc-sub{font-size:11px;color:var(--muted);text-align:center;line-height:1.6;}
+#lib-st{font-size:11px;color:var(--warn);text-align:center;padding:4px;}
+.mc{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:13px 15px;cursor:pointer;transition:all .2s;opacity:.4;pointer-events:none;}
+.mc.rdy{opacity:1;pointer-events:auto;}.mc.best{border-color:rgba(255,122,0,.4);}
+.mc:hover{border-color:var(--accent);transform:translateY(-1px);}.mc:active{transform:scale(.98);}
+.mc.blocked{opacity:.25;pointer-events:none;}
+.mc-top{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+.mc-name{font-family:'Orbitron',monospace;font-size:11px;font-weight:700;color:var(--text);}
+.mc-badge{margin-left:auto;font-size:9px;padding:2px 8px;border-radius:20px;font-weight:600;}
+.b-best{background:rgba(255,122,0,.15);border:1px solid rgba(255,122,0,.4);color:var(--accent);}
+.b-ok{background:rgba(255,154,51,.1);border:1px solid rgba(255,154,51,.3);color:var(--accent2);}
+.b-warn{background:rgba(255,204,0,.1);border:1px solid rgba(255,204,0,.3);color:var(--warn);}
+.b-no{background:rgba(255,51,85,.1);border:1px solid rgba(255,51,85,.3);color:var(--danger);}
+.mc-desc{font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:6px;}
+.mc-stats{display:flex;gap:10px;}
+.mc-stat{font-size:10px;color:var(--muted);display:flex;align-items:center;gap:3px;}
+.mc-stat span{color:var(--text);}
+.rmini{height:3px;width:55px;background:var(--s2);border-radius:2px;overflow:hidden;}
+.rminif{height:100%;border-radius:2px;background:var(--accent);}
+
+#load-screen{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:30px;text-align:center;}
+.lt{font-family:'Orbitron',monospace;font-size:12px;color:var(--accent);letter-spacing:.1em;}
+#lpct{font-family:'Orbitron',monospace;font-size:30px;font-weight:900;color:var(--accent);text-shadow:0 0 20px var(--glow);}
+.lbw{width:100%;max-width:300px;height:7px;background:var(--s2);border-radius:4px;overflow:hidden;}
+#lb{height:100%;width:0%;background:linear-gradient(90deg,#c05000,var(--accent2));border-radius:4px;transition:width .3s;}
+#lst{font-size:11px;color:var(--muted);line-height:1.6;max-width:280px;}
+.lc-btn{background:none;border:1px solid var(--border);color:var(--muted);padding:8px 20px;border-radius:8px;font-size:11px;cursor:pointer;font-family:'Exo 2',sans-serif;}
+.lc-btn:hover{border-color:var(--danger);color:var(--danger);}
+
+#chat-screen{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+#chat-topbar{padding:6px 12px;background:var(--s1);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;flex-shrink:0;flex-wrap:wrap;}
+#active-model{font-family:'Orbitron',monospace;font-size:9px;color:var(--accent);letter-spacing:.07em;}
+#tps{font-size:9px;color:var(--accent2);background:rgba(255,122,0,.08);border:1px solid rgba(255,122,0,.2);padding:2px 7px;border-radius:20px;}
+.tb-btn{background:none;border:1px solid var(--border);color:var(--muted);padding:3px 8px;border-radius:6px;font-size:9px;cursor:pointer;transition:all .15s;font-family:'Exo 2',sans-serif;}
+.tb-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+#messages{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:var(--border) transparent;}
+.msg{display:flex;flex-direction:column;gap:3px;animation:mup .2s ease-out;}
+@keyframes mup{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.msg.user{align-items:flex-end;}.msg.ai{align-items:flex-start;}
+.msg-sender{font-size:10px;color:var(--muted);letter-spacing:.05em;padding:0 4px;}
+.msg-row{display:flex;gap:8px;align-items:flex-end;max-width:100%;}
+.msg.user .msg-row{flex-direction:row-reverse;}
+.av{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.msg.user .av{background:var(--accent);}.msg.ai .av{background:rgba(255,122,0,.1);border:1px solid rgba(255,122,0,.25);}
+.bubble{max-width:min(500px,80%);padding:10px 13px;font-size:13px;line-height:1.7;border-radius:12px;word-break:break-word;}
+.msg.user .bubble{background:var(--user-bg);color:var(--user-text);border-bottom-right-radius:3px;}
+.msg.ai .bubble{background:var(--ai-bg);border:1px solid var(--border);border-bottom-left-radius:3px;}
+.bubble code{background:rgba(255,122,0,.1);color:var(--accent);padding:1px 5px;border-radius:3px;font-size:11px;font-family:monospace;}
+.bubble pre{background:#111;border:1px solid #333;border-left:3px solid var(--accent);padding:12px;border-radius:0 0 8px 8px;margin:0 0 8px;overflow-x:auto;font-size:11px;line-height:1.6;color:#eee;}
+.bubble pre code{background:none;color:inherit;padding:0;}
+.bubble strong{color:var(--accent2);}
+.code-header{background:#222;border-bottom:1px solid #333;padding:4px 10px;display:flex;align-items:center;justify-content:space-between;border-radius:8px 8px 0 0;}
+.code-lang{font-size:10px;color:#888;font-family:monospace;}
+.code-copy{background:none;border:none;color:#888;cursor:pointer;font-size:10px;padding:2px 6px;border-radius:4px;}
+.code-copy:hover{background:#333;color:#fff;}
+.system-msg{background:rgba(255,122,0,.06);border:1px solid rgba(255,122,0,.2);border-radius:8px;padding:8px 12px;font-size:11px;color:var(--muted);text-align:center;}
+.cat-typing{display:flex;align-items:center;gap:8px;padding:4px 0;}
+.cat-emoji{font-size:20px;animation:catb .6s infinite alternate;}
+@keyframes catb{from{transform:translateY(0) rotate(-5deg)}to{transform:translateY(-4px) rotate(5deg)}}
+.cat-dots{display:flex;gap:4px;}
+.cat-dots span{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:td 1.2s infinite;}
+.cat-dots span:nth-child(2){animation-delay:.18s}.cat-dots span:nth-child(3){animation-delay:.36s}
+@keyframes td{0%,80%,100%{transform:scale(.5);opacity:.3}40%{transform:scale(1);opacity:1}}
+
+#input-area{padding:8px 12px 12px;border-top:1px solid var(--border);background:var(--s1);flex-shrink:0;}
+#file-preview{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;}
+.file-chip{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:4px 10px;font-size:10px;color:var(--text);display:flex;align-items:center;gap:6px;}
+.file-chip button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;line-height:1;padding:0;}
+#input-row{display:flex;gap:8px;align-items:flex-end;}
+#msg-input{flex:1;resize:none;min-height:44px;max-height:120px;padding:11px 13px;background:var(--s2);border:1px solid var(--border);color:var(--text);border-radius:10px;font-family:'Exo 2',sans-serif;font-size:14px;line-height:1.5;outline:none;transition:border-color .2s;-webkit-appearance:none;}
+#msg-input:focus{border-color:var(--accent);}
+#msg-input::placeholder{color:var(--muted);}
+.input-btn{width:40px;height:44px;border:1px solid var(--border);border-radius:10px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;background:var(--s2);color:var(--muted);font-size:16px;}
+.input-btn:hover{border-color:var(--accent);}
+#send-btn{width:44px;height:44px;background:var(--accent);border:none;border-radius:10px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+#send-btn:disabled{opacity:.3;cursor:not-allowed;}
+#send-btn svg{width:17px;height:17px;fill:#fff;}
+#stop-btn{width:44px;height:44px;background:var(--danger);border:none;border-radius:10px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+#stop-btn svg{width:15px;height:15px;fill:#fff;}
+#hint-row{font-size:10px;color:var(--muted);margin-top:6px;text-align:center;}
+
+#settings-overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);opacity:0;transition:opacity .3s;pointer-events:none;}
+#settings-overlay.show{opacity:1;pointer-events:auto;}
+#settings-panel{position:fixed;bottom:0;left:0;right:0;z-index:201;background:var(--s1);border-radius:20px 20px 0 0;border-top:1px solid var(--border);max-height:92vh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .35s cubic-bezier(.32,1,.56,1);}
+#settings-panel.show{transform:translateY(0);}
+.sp-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:10px auto 0;}
+.sp-header{padding:14px 18px 10px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.sp-header h2{font-family:'Orbitron',monospace;font-size:13px;color:var(--accent);letter-spacing:.08em;}
+#sp-back{background:none;border:1px solid var(--border);color:var(--muted);width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;}
+#sp-back:hover{border-color:var(--accent);color:var(--accent);}
+.sp-body{overflow-y:auto;padding:16px 18px 30px;flex:1;-webkit-overflow-scrolling:touch;}
+.s-sec{margin-bottom:20px;}
+.s-sec-title{font-size:10px;color:var(--muted);letter-spacing:.12em;margin-bottom:10px;text-transform:uppercase;}
+.s-lbl{font-size:11px;color:var(--muted);letter-spacing:.06em;margin-bottom:5px;display:block;}
+.s-desc{font-size:10px;color:var(--muted);margin-top:4px;line-height:1.5;}
+.s-sep{border:none;border-top:1px solid var(--border);margin:16px 0;}
+.theme-btns{display:flex;gap:8px;}
+.theme-btn{flex:1;padding:10px 6px;border:2px solid var(--border);border-radius:10px;cursor:pointer;font-size:11px;transition:all .2s;background:var(--s2);color:var(--text);font-family:'Exo 2',sans-serif;text-align:center;}
+.theme-btn.active{border-color:var(--accent);background:rgba(255,122,0,.1);color:var(--accent);}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.toggle{position:relative;width:42px;height:24px;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;}
+.tsl{position:absolute;inset:0;background:var(--s2);border:1px solid var(--border);border-radius:12px;cursor:pointer;transition:.3s;}
+.tsl::before{content:'';position:absolute;width:18px;height:18px;left:2px;top:2px;background:var(--muted);border-radius:50%;transition:.3s;}
+.toggle input:checked+.tsl{background:rgba(42,138,74,.15);border-color:var(--green);}
+.toggle input:checked+.tsl::before{transform:translateX(18px);background:var(--green);}
+.server-list{display:flex;flex-direction:column;gap:8px;margin-bottom:10px;}
+.sv-item{background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;cursor:pointer;transition:all .2s;position:relative;}
+.sv-item:hover{border-color:var(--accent);}
+.sv-item.active{border-color:var(--accent);background:rgba(255,122,0,.08);}
+.sv-name{font-size:12px;font-weight:600;color:var(--text);}
+.sv-url{font-size:10px;color:var(--muted);margin-top:2px;word-break:break-all;}
+.sv-check{position:absolute;right:10px;top:50%;transform:translateY(-50%);color:var(--accent);font-size:16px;}
+.sv-del{position:absolute;right:10px;top:8px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;}
+.sv-del:hover{color:var(--danger);}
+.add-sv-form{background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px;}
+.s-input{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:9px 11px;border-radius:8px;font-size:12px;font-family:'Exo 2',sans-serif;outline:none;transition:border-color .2s;margin-bottom:8px;-webkit-appearance:none;}
+.s-input:focus{border-color:var(--accent);}
+.s-input::placeholder{color:var(--muted);}
+.s-btn{background:var(--accent);border:none;color:#fff;padding:9px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Exo 2',sans-serif;}
+.s-btn:hover{opacity:.85;}
+.s-btn.out{background:none;border:1px solid var(--border);color:var(--muted);}
+.s-btn.out:hover{border-color:var(--accent);color:var(--accent);}
+.ram-presets{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px;}
+.rp-btn{padding:8px 4px;border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:10px;text-align:center;transition:all .15s;background:var(--s2);color:var(--text);font-family:'Exo 2',sans-serif;position:relative;}
+.rp-btn.active{border-color:var(--accent);background:rgba(255,122,0,.1);color:var(--accent);}
+.rp-btn .ib{position:absolute;top:2px;right:3px;background:none;border:none;color:var(--muted);font-size:10px;cursor:pointer;padding:0;}
+.rp-val{font-size:12px;font-weight:700;font-family:'Orbitron',monospace;display:block;margin-bottom:1px;}
+.rp-lbl{font-size:9px;color:var(--muted);}
+input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;-webkit-appearance:none;height:6px;border-radius:3px;background:var(--s2);}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--accent);border:2px solid var(--s1);margin-top:-7px;}
+input[type=range]::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:var(--s2);}
+.save-btn{width:100%;background:var(--accent);border:none;color:#fff;padding:13px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Exo 2',sans-serif;margin-top:6px;}
+.save-btn:hover{opacity:.85;}
+
+#user-menu{position:fixed;top:55px;right:14px;z-index:300;background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:8px;min-width:180px;box-shadow:0 4px 20px rgba(0,0,0,.15);animation:fadedown .15s ease-out;}
+@keyframes fadedown{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.um-info{padding:8px 10px 10px;border-bottom:1px solid var(--border);margin-bottom:6px;}
+.um-name{font-size:13px;font-weight:600;color:var(--text);}
+.um-email{font-size:10px;color:var(--muted);}
+.um-btn{width:100%;background:none;border:none;color:var(--text);padding:9px 10px;border-radius:8px;font-size:12px;cursor:pointer;text-align:left;font-family:'Exo 2',sans-serif;transition:background .15s;display:flex;align-items:center;gap:8px;}
+.um-btn:hover{background:var(--s2);}
+.um-btn.danger{color:var(--danger);}
+
+#ram-warn{position:fixed;inset:0;z-index:400;background:rgba(26,0,0,.97);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px;text-align:center;}
+#ram-warn h2{font-family:'Orbitron',monospace;font-size:15px;color:var(--danger);text-shadow:0 0 20px var(--danger);}
+.wb{font-size:12px;color:#ffe8cc;line-height:1.8;max-width:320px;}
+.wb strong{color:var(--warn);}
+.wn{font-size:10px;color:#7a5030;max-width:320px;line-height:1.6;border-top:1px solid #3a1010;padding-top:12px;}
+#wcd{font-family:'Orbitron',monospace;font-size:32px;font-weight:900;color:var(--warn);}
+.warn-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+.warn-btn{background:none;border:2px solid #3a2a00;color:#7a5030;padding:10px 24px;border-radius:10px;font-size:12px;font-weight:700;cursor:not-allowed;font-family:'Exo 2',sans-serif;opacity:.35;transition:all .3s;}
+.warn-btn.on{cursor:pointer;opacity:1;}
+.warn-btn.primary{border-color:var(--danger);color:var(--danger);}
+
+#info-tip{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);z-index:500;background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:14px 16px;max-width:300px;width:calc(100% - 32px);box-shadow:0 4px 20px rgba(0,0,0,.2);animation:fadeup .2s ease-out;}
+@keyframes fadeup{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+#info-tip h3{font-size:12px;color:var(--accent);margin-bottom:5px;font-family:'Orbitron',monospace;}
+#info-tip p{font-size:11px;color:var(--muted);line-height:1.6;}
+#info-tip .itc{position:absolute;top:8px;right:10px;background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;}
+
+#fb-help{position:fixed;inset:0;z-index:350;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:16px;}
+.fb-card{background:var(--s1);border:1px solid var(--border);border-radius:16px;padding:22px;width:100%;max-width:380px;max-height:85vh;overflow-y:auto;}
+.fb-card h2{font-family:'Orbitron',monospace;font-size:13px;color:var(--accent);margin-bottom:12px;}
+.fb-step{display:flex;gap:10px;margin-bottom:12px;font-size:12px;color:var(--text);line-height:1.6;}
+.fb-n{width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;}
+
+.hidden{display:none!important;}
+</style>
+</head>
+<body data-theme="light">
+
+<div id="auth-screen">
+  <div class="auth-logo">CATixAI<small>// ТВОЙ ЛОКАЛЬНЫЙ AI</small></div>
+  <div class="auth-card">
+    <h2>ВХОД В СИСТЕМУ</h2>
+    <p>Войди чтобы синхронизировать память между устройствами.</p>
+    <button class="google-btn" id="btn-google">
+      <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Войти через Google
+    </button>
+    <div class="auth-sep"><span>или</span></div>
+    <input class="auth-input" id="auth-email" type="email" placeholder="Email">
+    <input class="auth-input" id="auth-pass" type="password" placeholder="Пароль">
+    <div id="auth-error"></div>
+    <button class="auth-btn" id="btn-email">Войти</button>
+    <div class="auth-toggle" id="auth-toggle-wrap">Нет аккаунта? <span id="auth-toggle-lbl">Зарегистрироваться</span></div>
+    <button class="skip-btn" id="btn-skip">Пропустить (без синхронизации)</button>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+  <header>
+    <button id="settings-btn">&#9881;</button>
+    <div class="hdr-logo">CATixAI<small>// локальный AI</small></div>
+    <div id="hdr-right">
+      <div id="mem-badge">&#129504; выкл</div>
+      <div id="user-av-wrap"></div>
+    </div>
+  </header>
+  <div id="rambar">
+    <span class="rl">RAM</span>
+    <div class="rt"><div id="rf"></div></div>
+    <span id="rp">0%</span>
+    <span id="cloud-pill">&#9729; офлайн</span>
+  </div>
+
+  <div id="model-screen">
+    <div class="sc-title">// ВЫБЕРИ МОДЕЛЬ</div>
+    <div class="sc-sub" id="dev-info">Определяю устройство...</div>
+    <div id="lib-st">&#8987; Загружаю WebLLM...</div>
+    <div class="mc best" id="mc0"><div class="mc-top"><div class="mc-name">Phi-3.5 Mini</div><div class="mc-badge b-best">&#9733; РЕКОМЕНДУЕТСЯ</div></div><div class="mc-desc">Быстрый и умный. Идеально для большинства устройств. Microsoft.</div><div class="mc-stats"><div class="mc-stat">&#128190; <span>~2.4 GB</span></div><div class="mc-stat">&#9889; <span>очень быстрый</span></div><div class="mc-stat">RAM: <div class="rmini"><div class="rminif" style="width:30%"></div></div></div></div></div>
+    <div class="mc" id="mc1"><div class="mc-top"><div class="mc-name">Llama 3.2 3B</div><div class="mc-badge b-ok">ХОРОШИЙ</div></div><div class="mc-desc">Баланс качества и скорости.</div><div class="mc-stats"><div class="mc-stat">&#128190; <span>~2 GB</span></div><div class="mc-stat">&#9889; <span>быстрый</span></div><div class="mc-stat">RAM: <div class="rmini"><div class="rminif" style="width:25%"></div></div></div></div></div>
+    <div class="mc" id="mc2"><div class="mc-top"><div class="mc-name">Mistral 7B</div><div class="mc-badge b-warn">&#9888; НУЖНО 6+ GB</div></div><div class="mc-desc">Мощный. Закрой все приложения перед запуском.</div><div class="mc-stats"><div class="mc-stat">&#128190; <span>~4 GB</span></div><div class="mc-stat">&#9889; <span>медленнее</span></div><div class="mc-stat">RAM: <div class="rmini"><div class="rminif" style="width:65%;background:var(--warn)"></div></div></div></div></div>
+    <div class="mc blocked"><div class="mc-top"><div class="mc-name" style="color:var(--muted)">Llama 3.1 8B</div><div class="mc-badge b-no">&#10005; ЗАБЛОКИРОВАНО</div></div><div class="mc-desc" style="color:var(--muted)">Требует 8+ GB свободной RAM.</div></div>
+  </div>
+
+  <div id="load-screen" class="hidden">
+    <div class="lt">// ЗАГРУЗКА МОДЕЛИ</div>
+    <div id="lpct">0%</div>
+    <div class="lbw"><div id="lb"></div></div>
+    <div id="lst">Подготовка...</div>
+    <button class="lc-btn" id="btn-cancel-load">&#10005; Отмена</button>
+  </div>
+
+  <div id="chat-screen" class="hidden">
+    <div id="chat-topbar">
+      <span id="active-model">-</span>
+      <span id="tps">- tok/s</span>
+      <button class="tb-btn" id="btn-clear">очистить</button>
+      <button class="tb-btn" id="btn-unload">сменить модель</button>
+    </div>
+    <div id="messages"></div>
+    <div id="input-area">
+      <div id="file-preview"></div>
+      <div id="input-row">
+        <button class="input-btn" id="btn-attach">&#128206;</button>
+        <input type="file" id="file-input" style="display:none" accept=".txt,.md,.js,.py,.html,.css,.json,.csv,.ts">
+        <textarea id="msg-input" placeholder="Напиши сообщение..." rows="1" disabled></textarea>
+        <button id="stop-btn" class="hidden"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/></svg></button>
+        <button id="send-btn" disabled><svg viewBox="0 0 24 24"><path d="M2 21L23 12 2 3v7l15 2-15 2z"/></svg></button>
+      </div>
+      <div id="hint-row">Enter - отправить | 📎 - файл | "начни запоминать" - вкл память</div>
+    </div>
+  </div>
+</div>
+
+<div id="user-menu" class="hidden">
+  <div class="um-info"><div class="um-name" id="um-name">Гость</div><div class="um-email" id="um-email"></div></div>
+  <button class="um-btn" id="um-settings">&#9881; Настройки</button>
+  <button class="um-btn danger" id="um-signout">&#11096; Выйти</button>
+</div>
+
+<div id="settings-overlay"></div>
+<div id="settings-panel">
+  <div class="sp-handle"></div>
+  <div class="sp-header"><button id="sp-back">&#8592;</button><h2>&#9881; НАСТРОЙКИ</h2></div>
+  <div class="sp-body">
+    <div class="s-sec">
+      <div class="s-sec-title">Тема оформления</div>
+      <div class="theme-btns">
+        <button class="theme-btn active" id="btn-light">&#9728; Светлая</button>
+        <button class="theme-btn" id="btn-dark">&#9790; Тёмная</button>
+      </div>
+    </div>
+    <hr class="s-sep">
+    <div class="s-sec">
+      <div class="s-sec-title">Память</div>
+      <div class="toggle-row">
+        <div><span style="font-size:12px;font-weight:600">Запоминание включено</span><div class="s-desc">AI сохраняет информацию из разговора</div></div>
+        <label class="toggle"><input type="checkbox" id="mem-toggle"><span class="tsl"></span></label>
+      </div>
+    </div>
+    <hr class="s-sep">
+    <div class="s-sec">
+      <div class="s-sec-title">Облачная память</div>
+      <div class="toggle-row" style="margin-bottom:12px">
+        <div><span style="font-size:12px;font-weight:600">Синхронизация между устройствами</span><div class="s-desc">Память хранится на сервере</div></div>
+        <label class="toggle"><input type="checkbox" id="cloud-toggle"><span class="tsl"></span></label>
+      </div>
+      <div class="s-lbl" style="margin-bottom:8px">СЕРВЕР ПАМЯТИ</div>
+      <div class="server-list" id="server-list"></div>
+      <button class="s-btn out" id="btn-add-sv" style="width:100%;margin-bottom:8px">+ Добавить свой сервер</button>
+      <div class="add-sv-form hidden" id="add-sv-form">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px;line-height:1.6">Нужен Firebase Realtime Database. <a href="#" id="fb-help-link" style="color:var(--accent)">Как создать?</a></div>
+        <input class="s-input" id="sv-name" placeholder="Название сервера">
+        <input class="s-input" id="sv-url" placeholder="Firebase URL: https://xxx.firebaseio.com">
+        <input class="s-input" id="sv-desc" placeholder="Описание (необязательно)">
+        <div style="display:flex;gap:8px"><button class="s-btn" id="btn-sv-add">Добавить</button><button class="s-btn out" id="btn-sv-cancel">Отмена</button></div>
+      </div>
+    </div>
+    <hr class="s-sep">
+    <div class="s-sec">
+      <div class="s-sec-title">Оперативная память</div>
+      <div class="s-desc" style="margin-bottom:12px">Сколько RAM выделить нейросети</div>
+      <div class="ram-presets">
+        <div class="rp-btn" id="rp0"><button class="ib" data-title="Очень мало 1.5GB" data-txt="Для телефонов с 4 GB RAM. Работает медленно.">i</button><span class="rp-val">1.5</span><span class="rp-lbl">Очень мало</span></div>
+        <div class="rp-btn" id="rp1"><button class="ib" data-title="Минимум 2GB" data-txt="Для 4-6 GB RAM. Лёгкие модели работают стабильно.">i</button><span class="rp-val">2</span><span class="rp-lbl">Минимум</span></div>
+        <div class="rp-btn active" id="rp2"><button class="ib" data-title="Среднее 4GB" data-txt="Для 6-8 GB RAM. Хорошее качество и скорость.">i</button><span class="rp-val">4</span><span class="rp-lbl">Среднее</span></div>
+        <div class="rp-btn" id="rp3"><button class="ib" data-title="Хорошее 6GB" data-txt="Для 8-12 GB RAM. Хорошие модели работают быстро.">i</button><span class="rp-val">6</span><span class="rp-lbl">Хорошее</span></div>
+        <div class="rp-btn" id="rp4"><button class="ib" data-title="Очень хорошее 10GB" data-txt="Для 12-16 GB RAM. Мощные модели, быстрые ответы.">i</button><span class="rp-val">10</span><span class="rp-lbl">Очень хор.</span></div>
+        <div class="rp-btn" id="rp5"><button class="ib" data-title="Отлично 16+ GB" data-txt="Для 16-64 GB RAM. Нейросеть летает, мгновенные ответы.">i</button><span class="rp-val">16+</span><span class="rp-lbl">Отлично</span></div>
+      </div>
+      <input type="range" id="ram-sl" min="1.5" max="64" step="0.5" value="4">
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:4px;"><span>1.5 GB</span><span id="ram-sl-val" style="color:var(--accent);font-weight:700">4 GB</span><span>64 GB</span></div>
+      <hr class="s-sep">
+      <div class="s-sec-title">Ядра процессора</div>
+      <input type="range" id="cores-sl" min="1" max="16" step="1" value="4">
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:4px;"><span>1 ядро</span><span id="cores-val" style="color:var(--accent);font-weight:700">4 ядра</span><span>16 ядер</span></div>
+      <button class="save-btn" id="btn-save-hw">&#128190; СОХРАНИТЬ</button>
+    </div>
+  </div>
+</div>
+
+<div id="ram-warn" class="hidden">
+  <h2>&#9888; ВНИМАНИЕ!</h2>
+  <div class="wb">Вы выбрали <strong id="wram">- GB</strong> RAM для нейросети.<br><br>Если это больше чем есть у вашего устройства — телефон может <strong>зависнуть или перегреться</strong>.<br><br>Убедитесь что знаете сколько RAM в вашем устройстве!</div>
+  <div id="wcd">15</div>
+  <div class="wn">&#9888; CATixAI не несёт ответственности — вы предупреждены.</div>
+  <div class="warn-btns">
+    <button class="warn-btn" id="btn-wchange">&#9998; Изменить</button>
+    <button class="warn-btn primary" id="btn-wok">&#10003; Всё верно</button>
+  </div>
+</div>
+
+<div id="fb-help" class="hidden">
+  <div class="fb-card">
+    <h2>КАК СОЗДАТЬ FIREBASE</h2>
+    <div class="fb-step"><div class="fb-n">1</div><div>Зайди на <a href="https://console.firebase.google.com" target="_blank" style="color:var(--accent)">console.firebase.google.com</a> и нажми "Добавить проект"</div></div>
+    <div class="fb-step"><div class="fb-n">2</div><div>Придумай название, отключи Analytics, нажми "Создать"</div></div>
+    <div class="fb-step"><div class="fb-n">3</div><div>В левом меню: <b>Realtime Database</b> → "Создать базу данных"</div></div>
+    <div class="fb-step"><div class="fb-n">4</div><div>Выбери регион europe-west1, режим — Тестовый, нажми "Готово"</div></div>
+    <div class="fb-step"><div class="fb-n">5</div><div>Скопируй URL вида: <code style="color:var(--accent);font-size:11px">https://xxx-rtdb.firebasedatabase.app</code></div></div>
+    <button class="s-btn" id="btn-fb-close" style="width:100%;margin-top:12px">Понятно!</button>
+  </div>
+</div>
+
+<script>
+(function() {
+'use strict';
+
+// ═══ FIREBASE ═══
+var FB_CONFIG = {
+  apiKey: "AIzaSyBPGXzFdc6HxZ6snheyu45Sn-UYo1MZYfk",
+  authDomain: "catixai-63d9e.firebaseapp.com",
+  databaseURL: "https://catixai-63d9e-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "catixai-63d9e",
+  storageBucket: "catixai-63d9e.firebasestorage.app",
+  messagingSenderId: "198064871194",
+  appId: "1:198064871194:web:2aff2de16a16156561bea3",
+  measurementId: "G-6F8G0SECC6"
+};
+
+var fbApp, fbAuth, fbDb, currentUser = null;
+try {
+  fbApp = firebase.initializeApp(FB_CONFIG);
+  fbAuth = firebase.auth();
+  fbDb = firebase.database();
+  fbAuth.onAuthStateChanged(function(user) {
+    currentUser = user;
+    if (user) { onLoggedIn(user); }
+  });
+} catch(e) { console.warn('FB init:', e); }
+
+// ═══ STATE ═══
+var webllm = null, engine = null;
+var busy = false, stopReq = false;
+var memEnabled = false, cloudEnabled = false;
+var currentModelId = '', currentModelGB = 0;
+var allocatedRAM = parseFloat(localStorage.getItem('catix_ram') || '4');
+var allocatedCores = parseInt(localStorage.getItem('catix_cores') || '4');
+var pendingRAM = allocatedRAM, pendingCores = allocatedCores;
+var history = [];
+var localMemory = JSON.parse(localStorage.getItem('catix_memory') || '[]');
+var servers = JSON.parse(localStorage.getItem('catix_servers') || '[]');
+var activeServerId = localStorage.getItem('catix_active_server') || 'default';
+var attachedFiles = [];
+var authMode = 'login';
+var wTimer = null, wRAM = 0, wCores = 0;
+var theme = localStorage.getItem('catix_theme') || 'light';
+
+var DEFAULT_SV = { id:'default', name:'CATixAI Server', url:'https://catixai-63d9e-default-rtdb.europe-west1.firebasedatabase.app', isDefault:true };
+
+// ═══ THEME ═══
+function applyTheme(t) {
+  theme = t;
+  localStorage.setItem('catix_theme', t);
+  document.body.setAttribute('data-theme', t);
+  document.getElementById('btn-light').className = 'theme-btn' + (t === 'light' ? ' active' : '');
+  document.getElementById('btn-dark').className  = 'theme-btn' + (t === 'dark'  ? ' active' : '');
+}
+
+// ═══ AUTH ═══
+function toggleAuthMode() {
+  authMode = authMode === 'login' ? 'register' : 'login';
+  document.getElementById('btn-email').textContent = authMode === 'login' ? 'Войти' : 'Зарегистрироваться';
+  document.getElementById('auth-toggle-lbl').textContent = authMode === 'login' ? 'Зарегистрироваться' : 'Уже есть аккаунт';
+  document.getElementById('auth-error').textContent = '';
+}
+
+function signInGoogle() {
+  if (!fbAuth) { skipAuth(); return; }
+  if (window.location.protocol === 'file:') {
+    document.getElementById('auth-error').textContent = 'Google вход не работает при открытии файла напрямую. Используй "Пропустить" или открой файл через веб-сервер.';
+    return;
+  }
+  var provider = new firebase.auth.GoogleAuthProvider();
+  fbAuth.signInWithPopup(provider).catch(function(e) {
+    var msgs = {
+      'auth/popup-blocked': 'Браузер заблокировал попап. Разреши попапы и попробуй снова.',
+      'auth/popup-closed-by-user': 'Окно входа было закрыто.',
+      'auth/cancelled-popup-request': 'Запрос отменён.',
+      'auth/unauthorized-domain': 'Домен не авторизован. Используй кнопку Пропустить.'
+    };
+    document.getElementById('auth-error').textContent = msgs[e.code] || e.message;
+  });
+}
+
+function signInEmail() {
+  if (!fbAuth) { skipAuth(); return; }
+  var email = document.getElementById('auth-email').value.trim();
+  var pass  = document.getElementById('auth-pass').value;
+  if (!email || !pass) { document.getElementById('auth-error').textContent = 'Введи email и пароль'; return; }
+  var p = authMode === 'login'
+    ? fbAuth.signInWithEmailAndPassword(email, pass)
+    : fbAuth.createUserWithEmailAndPassword(email, pass);
+  p.then(function(result) {
+    // onAuthStateChanged handles the rest
+  }).catch(function(e) {
+    var msgs = {
+      'auth/user-not-found': 'Пользователь не найден',
+      'auth/wrong-password': 'Неверный пароль',
+      'auth/email-already-in-use': 'Email уже используется',
+      'auth/weak-password': 'Пароль слишком слабый (мин. 6 символов)',
+      'auth/invalid-email': 'Неверный формат email',
+      'auth/too-many-requests': 'Слишком много попыток, попробуй позже',
+      'auth/unauthorized-domain': 'Домен не авторизован. Открой файл через сервер или используй Пропустить.'
+    };
+    document.getElementById('auth-error').textContent = msgs[e.code] || e.message;
+  });
+}
+
+function skipAuth() {
+  try { document.getElementById('auth-screen').classList.add('hidden'); } catch(e) {}
+  try { document.getElementById('app').classList.remove('hidden'); } catch(e) {}
+  updateAvatar(null);
+  startApp();
+}
+
+function onLoggedIn(user) {
+  document.getElementById('auth-screen').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  updateAvatar(user);
+  startApp();
+  if (cloudEnabled) syncFromCloud();
+}
+
+function updateAvatar(user) {
+  var wrap = document.getElementById('user-av-wrap');
+  var letter = user ? (user.displayName || user.email || '?')[0].toUpperCase() : '?';
+  wrap.innerHTML = '<div class="user-av-placeholder" id="av-btn">' + letter + '</div>';
+  document.getElementById('av-btn').addEventListener('click', toggleUserMenu);
+  document.getElementById('um-name').textContent  = user ? (user.displayName || 'Пользователь') : 'Гость';
+  document.getElementById('um-email').textContent = user ? user.email : 'Без аккаунта';
+}
+
+function doSignOut() {
+  closeUserMenu();
+  if (fbAuth) fbAuth.signOut();
+  document.getElementById('app').classList.add('hidden');
+  document.getElementById('auth-screen').classList.remove('hidden');
+}
+
+// ═══ USER MENU ═══
+function toggleUserMenu() {
+  document.getElementById('user-menu').classList.toggle('hidden');
+}
+function closeUserMenu() {
+  document.getElementById('user-menu').classList.add('hidden');
+}
+
+// ═══ SETTINGS ═══
+function openSettings() {
+  closeUserMenu();
+  document.getElementById('settings-overlay').classList.add('show');
+  document.getElementById('settings-panel').classList.add('show');
+  document.getElementById('ram-sl').value = allocatedRAM;
+  document.getElementById('ram-sl-val').textContent = allocatedRAM + ' GB';
+  document.getElementById('cores-sl').value = allocatedCores;
+  updateCoresLabel(allocatedCores);
+  pendingRAM = allocatedRAM; pendingCores = allocatedCores;
+  renderServers();
+}
+function closeSettings() {
+  document.getElementById('settings-overlay').classList.remove('show');
+  document.getElementById('settings-panel').classList.remove('show');
+}
+
+// ═══ SERVERS ═══
+function getAllServers() { return [DEFAULT_SV].concat(servers); }
+
+function renderServers() {
+  var list = document.getElementById('server-list');
+  list.innerHTML = '';
+  getAllServers().forEach(function(sv) {
+    var active = (activeServerId || 'default') === sv.id;
+    var d = document.createElement('div');
+    d.className = 'sv-item' + (active ? ' active' : '');
+    d.innerHTML = '<div class="sv-name">' + (sv.isDefault ? '&#127760; ' : '') + sv.name + '</div>'
+      + '<div class="sv-url">' + sv.url + '</div>'
+      + (active ? '<div class="sv-check">&#10003;</div>' : '')
+      + (!sv.isDefault ? '<button class="sv-del" data-id="' + sv.id + '">&#215;</button>' : '');
+    d.addEventListener('click', function(e) {
+      if (e.target.classList.contains('sv-del')) { delServer(e.target.dataset.id); return; }
+      selectServer(sv.id);
+    });
+    list.appendChild(d);
+  });
+}
+
+function selectServer(id) {
+  activeServerId = id;
+  localStorage.setItem('catix_active_server', id);
+  renderServers();
+  if (cloudEnabled) syncFromCloud();
+}
+
+function addServer() {
+  var name = document.getElementById('sv-name').value.trim();
+  var url  = document.getElementById('sv-url').value.trim().replace(/\/$/, '');
+  if (!name || !url) { alert('Введи название и URL'); return; }
+  if (!url.startsWith('https://')) { alert('URL должен начинаться с https://'); return; }
+  var id = 'sv_' + Date.now();
+  servers.push({ id: id, name: name, url: url, desc: document.getElementById('sv-desc').value.trim() });
+  localStorage.setItem('catix_servers', JSON.stringify(servers));
+  document.getElementById('sv-name').value = '';
+  document.getElementById('sv-url').value = '';
+  document.getElementById('sv-desc').value = '';
+  document.getElementById('add-sv-form').classList.add('hidden');
+  selectServer(id);
+  renderServers();
+}
+
+function delServer(id) {
+  servers = servers.filter(function(s) { return s.id !== id; });
+  localStorage.setItem('catix_servers', JSON.stringify(servers));
+  if (activeServerId === id) selectServer('default');
+  else renderServers();
+}
+
+function getActiveUrl() {
+  var all = getAllServers();
+  var sv = all.find(function(s) { return s.id === (activeServerId || 'default'); }) || DEFAULT_SV;
+  return sv.url;
+}
+
+// ═══ CLOUD ═══
+function updateCloudUI() {
+  var p = document.getElementById('cloud-pill');
+  p.textContent = cloudEnabled ? '&#9729; облако' : '&#9729; офлайн';
+  p.className = cloudEnabled ? 'on' : '';
+  p.id = 'cloud-pill';
+}
+
+function getMemPath() {
+  var uid = currentUser ? currentUser.uid : 'guest';
+  return 'users/' + uid + '/memory';
+}
+
+function syncFromCloud() {
+  if (!cloudEnabled || !fbDb) return;
+  fbDb.ref(getMemPath()).once('value').then(function(snap) {
+    if (snap.exists()) {
+      var d = snap.val();
+      if (Array.isArray(d)) { localMemory = d; localStorage.setItem('catix_memory', JSON.stringify(localMemory)); }
+    }
+  }).catch(function(e) { console.warn('sync:', e); });
+}
+
+function pushToCloud() {
+  if (!cloudEnabled || !fbDb) return;
+  fbDb.ref(getMemPath()).set(localMemory).catch(function(e) { console.warn('push:', e); });
+}
+
+function saveMem() {
+  localStorage.setItem('catix_memory', JSON.stringify(localMemory));
+  pushToCloud();
+}
+
+// ═══ MEMORY ═══
+function toggleMem() {
+  memEnabled = !memEnabled;
+  document.getElementById('mem-toggle').checked = memEnabled;
+  updateMemBadge();
+  if (document.getElementById('chat-screen').classList.contains('hidden')) return;
+  appendSys(memEnabled ? '&#129504; Запоминание включено' + (cloudEnabled ? ' | облако' : ' | локально') : '&#129504; Запоминание выключено');
+}
+
+function updateMemBadge() {
+  var el = document.getElementById('mem-badge');
+  el.textContent = memEnabled ? '&#129504; вкл' : '&#129504; выкл';
+  el.className = memEnabled ? 'on' : '';
+  el.id = 'mem-badge';
+}
+
+function checkMemCmds(text) {
+  var low = text.toLowerCase().trim();
+  if (low.indexOf('начни запоминать') !== -1 || low === 'запоминай') {
+    memEnabled = true;
+    document.getElementById('mem-toggle').checked = true;
+    updateMemBadge();
+    appendSys('&#129504; Начинаю запоминать!' + (cloudEnabled ? ' Синхронизирую с облаком.' : ' Храню локально. Для синхронизации включи облако в настройках.'));
+    return true;
+  }
+  if (low.indexOf('перестань запоминать') !== -1) {
+    memEnabled = false;
+    document.getElementById('mem-toggle').checked = false;
+    updateMemBadge();
+    appendSys('&#129504; Запоминание выключено.');
+    return true;
+  }
+  var triggers = ['запомни что', 'запомни:', 'запомни,'];
+  for (var i = 0; i < triggers.length; i++) {
+    var idx = low.indexOf(triggers[i]);
+    if (idx !== -1) {
+      var fact = text.substring(idx + triggers[i].length).trim();
+      if (fact.length > 2) { addFact(fact); appendSys('&#128190; Запомнил: ' + fact); return false; }
+    }
+  }
+  return false;
+}
+
+function addFact(fact) {
+  localMemory.push({ text: fact, time: Date.now() });
+  saveMem();
+}
+
+function buildSystem() {
+  var s = 'Ты мой личный AI ассистент CATixAI. Отвечай по-русски. Будь полезным и точным.';
+  if (memEnabled && localMemory.length) {
+    s += '
+
+Долгосрочная память:
+';
+    localMemory.forEach(function(m, i) { s += (i+1) + '. ' + m.text + '
+'; });
+  }
+  return s;
+}
+
+// ═══ RAM ═══
+function updateRAMBar() {
+  var used = 1.8 + currentModelGB;
+  var pct = Math.min(used / allocatedRAM, 1);
+  var p = Math.round(pct * 100);
+  document.getElementById('rf').style.width = p + '%';
+  document.getElementById('rp').textContent = p + '%';
+  var fill = document.getElementById('rf');
+  if (pct >= 0.82) { fill.style.background = 'linear-gradient(90deg,#cc0022,#ff3355)'; if (busy) stopReq = true; }
+  else if (pct >= 0.6) fill.style.background = 'linear-gradient(90deg,#996600,var(--warn))';
+  else fill.style.background = 'linear-gradient(90deg,#c05000,var(--accent))';
+}
+
+function setRP(val, idx) {
+  pendingRAM = val;
+  document.getElementById('ram-sl').value = val;
+  document.getElementById('ram-sl-val').textContent = val + ' GB';
+  for (var i = 0; i < 6; i++) {
+    document.getElementById('rp'+i).className = 'rp-btn' + (i === idx ? ' active' : '');
+  }
+}
+
+function updateCoresLabel(v) {
+  document.getElementById('cores-val').textContent = v + (v == 1 ? ' ядро' : v < 5 ? ' ядра' : ' ядер');
+}
+
+function saveHW() {
+  pendingCores = parseInt(document.getElementById('cores-sl').value);
+  pendingRAM = parseFloat(document.getElementById('ram-sl').value);
+  closeSettings();
+  showRamWarn(pendingRAM, pendingCores);
+}
+
+function showRamWarn(ram, cores) {
+  wRAM = ram; wCores = cores;
+  document.getElementById('wram').textContent = ram + ' GB';
+  document.getElementById('ram-warn').classList.remove('hidden');
+  document.getElementById('btn-wok').className = 'warn-btn primary';
+  document.getElementById('btn-wchange').className = 'warn-btn';
+  var sec = 15;
+  document.getElementById('wcd').textContent = sec;
+  if (wTimer) clearInterval(wTimer);
+  wTimer = setInterval(function() {
+    sec--;
+    document.getElementById('wcd').textContent = sec;
+    if (sec <= 0) {
+      clearInterval(wTimer);
+      document.getElementById('btn-wok').className = 'warn-btn primary on';
+      document.getElementById('btn-wchange').className = 'warn-btn on';
+    }
+  }, 1000);
+}
+
+// ═══ FILES ═══
+function handleFile(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    attachedFiles.push({ name: file.name, content: ev.target.result });
+    renderFilePreviews();
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+function renderFilePreviews() {
+  var el = document.getElementById('file-preview');
+  el.innerHTML = '';
+  attachedFiles.forEach(function(f, i) {
+    var d = document.createElement('div');
+    d.className = 'file-chip';
+    d.innerHTML = '&#128196; ' + f.name + '<button data-i="' + i + '">&#215;</button>';
+    d.querySelector('button').addEventListener('click', function() {
+      attachedFiles.splice(parseInt(this.dataset.i), 1);
+      renderFilePreviews();
+    });
+    el.appendChild(d);
+  });
+}
+
+function buildContent(text) {
+  if (!attachedFiles.length) return text;
+  var content = text;
+  attachedFiles.forEach(function(f) {
+    content += '
+
+--- File: ' + f.name + ' ---
+' + f.content.slice(0, 8000);
+  });
+  attachedFiles = [];
+  renderFilePreviews();
+  return content;
+}
+
+// ═══ WebLLM ═══
+function startApp() {
+  import('https://esm.run/@mlc-ai/web-llm').then(function(mod) {
+    webllm = mod;
+    document.getElementById('lib-st').textContent = 'Готово — выбери модель';
+    document.getElementById('lib-st').style.color = 'var(--accent)';
+    document.querySelectorAll('.mc:not(.blocked)').forEach(function(c) { c.classList.add('rdy'); });
+    var ram = navigator.deviceMemory || '?';
+    document.getElementById('dev-info').textContent = 'Устройство: ~' + ram + ' GB RAM';
+  }).catch(function(e) {
+    document.getElementById('lib-st').textContent = 'Ошибка библиотеки: ' + e.message;
+    document.getElementById('lib-st').style.color = 'var(--danger)';
+  });
+}
+
+function doLoad(modelId, gb) {
+  if (!webllm) { alert('Подожди — библиотека ещё загружается...'); return; }
+  currentModelId = modelId; currentModelGB = gb;
+  document.getElementById('model-screen').classList.add('hidden');
+  document.getElementById('load-screen').classList.remove('hidden');
+  updateRAMBar();
+  var fn = webllm.CreateMLCEngine || webllm.CreateEngine || webllm.createEngine;
+  if (!fn) { alert('WebLLM API не найден'); return; }
+  fn(modelId, {
+    initProgressCallback: function(p) {
+      var pct = Math.round(p.progress * 100);
+      document.getElementById('lb').style.width = pct + '%';
+      document.getElementById('lpct').textContent = pct + '%';
+      document.getElementById('lst').textContent = p.text || 'Загрузка...';
+    }
+  }).then(function(eng) {
+    engine = eng;
+    document.getElementById('load-screen').classList.add('hidden');
+    document.getElementById('chat-screen').classList.remove('hidden');
+    document.getElementById('active-model').textContent = modelId.split('-').slice(0,3).join(' ');
+    document.getElementById('msg-input').disabled = false;
+    document.getElementById('send-btn').disabled = false;
+    updateRAMBar();
+    appendMsg('ai', 'CATixAI запущен! Работаю локально на твоём устройстве.
+
+Нажми "&#129504; выкл" или напиши "начни запоминать" чтобы включить память.
+Для синхронизации между устройствами включи облако в настройках.');
+  }).catch(function(e) {
+    document.getElementById('lst').textContent = 'Ошибка: ' + e.message;
+    setTimeout(function() {
+      document.getElementById('load-screen').classList.add('hidden');
+      document.getElementById('model-screen').classList.remove('hidden');
+    }, 4000);
+  });
+}
+
+// ═══ SEND ═══
+function sendMsg() {
+  if (busy || !engine) return;
+  var input = document.getElementById('msg-input');
+  var rawText = input.value.trim();
+  if (!rawText && !attachedFiles.length) return;
+  var text = buildContent(rawText || '(файл)');
+  input.value = ''; input.style.height = 'auto';
+  busy = true; stopReq = false;
+  document.getElementById('send-btn').classList.add('hidden');
+  document.getElementById('stop-btn').classList.remove('hidden');
+
+  if (checkMemCmds(rawText)) {
+    busy = false;
+    document.getElementById('stop-btn').classList.add('hidden');
+    document.getElementById('send-btn').classList.remove('hidden');
+    return;
+  }
+
+  appendMsg('user', rawText || '(файл)');
+  history.push({ role: 'user', content: text });
+
+  var isCode = /напиши|сделай|создай|код|function|class|def |script/.test(rawText.toLowerCase());
+  var typEl = appendTyping(isCode);
+  var t0 = Date.now();
+
+  engine.chat.completions.create({
+    messages: [{ role: 'system', content: buildSystem() }].concat(history.slice(-16)),
+    max_tokens: 1000, temperature: 0.7, stream: true
+  }).then(function(stream) {
+    typEl.remove();
+    var aiDiv = appendStreamBubble();
+    var bubble = aiDiv.querySelector('.bubble');
+    var full = '', toks = 0;
+
+    async function readStream() {
+      for await (var chunk of stream) {
+        if (stopReq) break;
+        var d = (chunk.choices[0] && chunk.choices[0].delta && chunk.choices[0].delta.content) || '';
+        full += d; toks += d.length / 4;
+        bubble.innerHTML = fmtMsg(full) + '<span style="opacity:.4">|</span>';
+        document.getElementById('messages').scrollTop = 99999;
+      }
+      bubble.innerHTML = fmtMsg(full);
+      history.push({ role: 'assistant', content: full });
+      var elapsed = (Date.now() - t0) / 1000;
+      document.getElementById('tps').textContent = Math.round(toks / elapsed) + ' tok/s';
+      busy = false; stopReq = false;
+      document.getElementById('stop-btn').classList.add('hidden');
+      document.getElementById('send-btn').classList.remove('hidden');
+      document.getElementById('msg-input').focus();
+    }
+    readStream();
+  }).catch(function(e) {
+    typEl.remove();
+    appendMsg('ai', 'Ошибка: ' + e.message);
+    busy = false; stopReq = false;
+    document.getElementById('stop-btn').classList.add('hidden');
+    document.getElementById('send-btn').classList.remove('hidden');
+  });
+}
+
+function stopGen() { stopReq = true; }
+
+// ═══ RENDER ═══
+function appendMsg(role, text) {
+  var el = document.getElementById('messages');
+  var d = document.createElement('div');
+  d.className = 'msg ' + role;
+  var name = role === 'user' ? (currentUser && (currentUser.displayName || currentUser.email) || 'Ты') : 'CATixAI';
+  var av = role === 'user' ? '&#128100;' : '&#128568;';
+  d.innerHTML = '<div class="msg-sender">' + name + '</div>'
+    + '<div class="msg-row"><div class="av">' + av + '</div>'
+    + '<div class="bubble">' + fmtMsg(text) + '</div></div>';
+  el.appendChild(d); el.scrollTop = 99999;
+  return d;
+}
+
+function appendSys(text) {
+  var el = document.getElementById('messages');
+  var d = document.createElement('div');
+  d.className = 'system-msg';
+  d.innerHTML = 'система: ' + text;
+  el.appendChild(d); el.scrollTop = 99999;
+}
+
+function appendTyping(isCode) {
+  var el = document.getElementById('messages');
+  var d = document.createElement('div');
+  d.className = 'msg ai';
+  var inner = isCode
+    ? '<div class="cat-typing"><span class="cat-emoji">&#128568;</span><span style="font-size:11px;color:var(--muted)">пишет код...</span><div class="cat-dots"><span></span><span></span><span></span></div></div>'
+    : '<div class="cat-typing"><span class="cat-emoji">&#128568;</span><div class="cat-dots"><span></span><span></span><span></span></div></div>';
+  d.innerHTML = '<div class="msg-sender">CATixAI</div><div class="msg-row"><div class="av">&#128568;</div><div class="bubble">' + inner + '</div></div>';
+  el.appendChild(d); el.scrollTop = 99999;
+  return d;
+}
+
+function appendStreamBubble() {
+  var el = document.getElementById('messages');
+  var d = document.createElement('div');
+  d.className = 'msg ai';
+  d.innerHTML = '<div class="msg-sender">CATixAI</div><div class="msg-row"><div class="av">&#128568;</div><div class="bubble"></div></div>';
+  el.appendChild(d); el.scrollTop = 99999;
+  return d;
+}
+
+function fmtMsg(t) {
+  t = t.replace(/```(\w*)
+?([\s\S]*?)```/g, function(_, lang, code) {
+    var l = lang || 'code';
+    return '<div class="code-header"><span class="code-lang">' + l + '</span>'
+      + '<button class="code-copy" onclick="copyCode(this)">копировать</button></div>'
+      + '<pre><code>' + code.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</code></pre>';
+  });
+  t = t.replace(/`([^`
+]+)`/g, '<code>$1</code>');
+  t = t.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  t = t.replace(/\*(.*?)\*/g, '<em>$1</em>');
+  t = t.replace(/
+/g, '<br>');
+  return t;
+}
+
+// ═══ EVENT LISTENERS ═══
+document.getElementById('btn-google').addEventListener('click', signInGoogle);
+document.getElementById('btn-email').addEventListener('click', signInEmail);
+document.getElementById('btn-skip').addEventListener('click', skipAuth);
+document.getElementById('auth-toggle-wrap').addEventListener('click', toggleAuthMode);
+
+document.getElementById('settings-btn').addEventListener('click', openSettings);
+document.getElementById('sp-back').addEventListener('click', closeSettings);
+document.getElementById('settings-overlay').addEventListener('click', closeSettings);
+
+document.getElementById('mem-badge').addEventListener('click', toggleMem);
+document.getElementById('mem-toggle').addEventListener('change', function() { memEnabled = this.checked; updateMemBadge(); });
+document.getElementById('cloud-toggle').addEventListener('change', function() {
+  cloudEnabled = this.checked; updateCloudUI();
+  if (cloudEnabled) syncFromCloud();
+});
+
+document.getElementById('btn-light').addEventListener('click', function() { applyTheme('light'); });
+document.getElementById('btn-dark').addEventListener('click',  function() { applyTheme('dark'); });
+
+document.getElementById('cloud-pill').addEventListener('click', openSettings);
+
+document.getElementById('btn-add-sv').addEventListener('click', function() { document.getElementById('add-sv-form').classList.remove('hidden'); });
+document.getElementById('btn-sv-cancel').addEventListener('click', function() { document.getElementById('add-sv-form').classList.add('hidden'); });
+document.getElementById('btn-sv-add').addEventListener('click', addServer);
+document.getElementById('fb-help-link').addEventListener('click', function(e) { e.preventDefault(); document.getElementById('fb-help').classList.remove('hidden'); });
+document.getElementById('btn-fb-close').addEventListener('click', function() { document.getElementById('fb-help').classList.add('hidden'); });
+
+document.getElementById('mc0').addEventListener('click', function() { doLoad('Phi-3.5-mini-instruct-q4f16_1-MLC', 2.4); });
+document.getElementById('mc1').addEventListener('click', function() { doLoad('Llama-3.2-3B-Instruct-q4f16_1-MLC', 2.0); });
+document.getElementById('mc2').addEventListener('click', function() { doLoad('Mistral-7B-Instruct-v0.3-q4f16_1-MLC', 4.1); });
+document.getElementById('btn-cancel-load').addEventListener('click', function() {
+  engine = null; currentModelGB = 0;
+  document.getElementById('load-screen').classList.add('hidden');
+  document.getElementById('model-screen').classList.remove('hidden');
+  updateRAMBar();
+});
+document.getElementById('btn-clear').addEventListener('click', function() {
+  history = [];
+  document.getElementById('messages').innerHTML = '';
+  appendMsg('ai', 'Чат очищен. Чем могу помочь?');
+});
+document.getElementById('btn-unload').addEventListener('click', function() {
+  engine = null; currentModelGB = 0;
+  document.getElementById('chat-screen').classList.add('hidden');
+  document.getElementById('model-screen').classList.remove('hidden');
+  document.querySelectorAll('.mc:not(.blocked)').forEach(function(c) { c.classList.add('rdy'); });
+  updateRAMBar();
+});
+
+document.getElementById('send-btn').addEventListener('click', sendMsg);
+document.getElementById('stop-btn').addEventListener('click', stopGen);
+document.getElementById('btn-attach').addEventListener('click', function() { document.getElementById('file-input').click(); });
+document.getElementById('file-input').addEventListener('change', handleFile);
+
+document.getElementById('msg-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
+});
+document.getElementById('msg-input').addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+});
+
+document.getElementById('ram-sl').addEventListener('input', function() {
+  pendingRAM = parseFloat(this.value);
+  document.getElementById('ram-sl-val').textContent = pendingRAM + ' GB';
+  var vals = [1.5, 2, 4, 6, 10, 16];
+  for (var i = 0; i < 6; i++) {
+    document.getElementById('rp'+i).className = 'rp-btn' + (vals[i] === pendingRAM ? ' active' : '');
+  }
+});
+document.getElementById('cores-sl').addEventListener('input', function() { updateCoresLabel(this.value); });
+document.getElementById('btn-save-hw').addEventListener('click', saveHW);
+
+var rpVals = [1.5, 2, 4, 6, 10, 16];
+for (var ri = 0; ri < 6; ri++) {
+  (function(idx, val) {
+    document.getElementById('rp'+idx).addEventListener('click', function(e) {
+      if (e.target.classList.contains('ib')) return;
+      setRP(val, idx);
+    });
+    document.querySelector('#rp'+idx+' .ib').addEventListener('click', function(e) {
+      e.stopPropagation();
+      var t = this.dataset.title, tx = this.dataset.txt;
+      var old = document.getElementById('info-tip');
+      if (old) old.remove();
+      var el = document.createElement('div');
+      el.id = 'info-tip';
+      el.innerHTML = '<button class="itc" onclick="this.parentElement.remove()">x</button><h3>' + t + '</h3><p>' + tx + '</p>';
+      document.body.appendChild(el);
+      setTimeout(function() { var tip = document.getElementById('info-tip'); if (tip) tip.remove(); }, 5000);
+    });
+  })(ri, rpVals[ri]);
+}
+
+document.getElementById('btn-wok').addEventListener('click', function() {
+  if (!this.classList.contains('on')) return;
+  clearInterval(wTimer);
+  allocatedRAM = wRAM; allocatedCores = wCores;
+  localStorage.setItem('catix_ram', allocatedRAM);
+  localStorage.setItem('catix_cores', allocatedCores);
+  document.getElementById('ram-warn').classList.add('hidden');
+  updateRAMBar();
+});
+document.getElementById('btn-wchange').addEventListener('click', function() {
+  if (!this.classList.contains('on')) return;
+  clearInterval(wTimer);
+  document.getElementById('ram-warn').classList.add('hidden');
+  openSettings();
+});
+
+document.getElementById('um-settings').addEventListener('click', openSettings);
+document.getElementById('um-signout').addEventListener('click', doSignOut);
+
+document.addEventListener('click', function(e) {
+  var m = document.getElementById('user-menu');
+  if (!m.classList.contains('hidden') && !e.target.closest('#user-av-wrap') && !e.target.closest('#user-menu')) closeUserMenu();
+});
+
+// Global copyCode for inline onclick
+window.copyCode = function(btn) {
+  var pre = btn.closest('.code-header').nextElementSibling;
+  if (pre) navigator.clipboard && navigator.clipboard.writeText(pre.textContent);
+  btn.textContent = 'скопировано';
+  setTimeout(function() { btn.textContent = 'копировать'; }, 2000);
+};
+
+// ═══ INIT ═══
+applyTheme(theme);
+updateRAMBar();
+// Show warning if opened as file://
+if (window.location.protocol === 'file:') {
+  document.getElementById('auth-error').textContent = 'Открыто как файл — Google вход недоступен. Используй Email/пароль или нажми Пропустить.';
+}
+
+})();
+</script>
+</body>
+</html>
